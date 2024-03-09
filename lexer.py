@@ -6,7 +6,8 @@ TOKEN_TYPES = {
     'IDENTIFIER': r'[a-zA-Z_][a-zA-Z0-9_]*',
     'INTEGER_LITERAL': r'\d+',
     'SYMBOL': r'[{}()\[\];=+\-*/,.]',
-    'COMMENT': r'\/\/.*|\/\*(.|\n)*?\*\/'
+    'COMMENT': r'\/\/.*|\/\*(.|\n)*?\*\/',
+    'WHITESPACE': r'\s+'
 }
 
 # Combine token types into a single regex pattern
@@ -32,7 +33,7 @@ class Lexer:
         tokens = []
         for match in TOKEN_REGEX.finditer(self.code):
             for name, value in match.groupdict().items():
-                if value:
+                if value and name != 'WHITESPACE':
                     tokens.append(Token(name, value))
                     break
         return tokens

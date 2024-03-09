@@ -1,6 +1,5 @@
 from lexer import Lexer
 
-
 class MiniJavaParser:
     def __init__(self, tokens):
         self.tokens = tokens
@@ -30,7 +29,10 @@ class MiniJavaParser:
     def class_declaration(self):
         self.consume('KEYWORD')  # class
         class_name = self.consume('IDENTIFIER').value
-        self.consume('SYMBOL')  # {
+        start_class_block = self.consume('SYMBOL').value  # {
+        if(start_class_block != '{'):
+            raise SyntaxError("Expected '{' at the beginning of class definition")
+        
         # Parse class body
         methods = []
         fields = []
@@ -44,12 +46,12 @@ class MiniJavaParser:
                 else:
                     methods.append(self.method_declaration())
             else:  # FieldDeclaration
-                fields.append(self.field_declaration())
+                fields.append(self.variable_declaration())
         self.consume('SYMBOL')  # }
         return {'class_name': class_name, 'methods': methods, 'fields': fields}
 
     def main_method(self):
-        access = self.consume('KEYWORD').value  # public
+        self.consume('KEYWORD').value  # public
         self.consume('KEYWORD')  # static
         self.consume('KEYWORD')  # void
         method_name = self.consume('IDENTIFIER').value  # main
@@ -57,18 +59,18 @@ class MiniJavaParser:
         self.consume('KEYWORD')  # String
         self.consume('SYMBOL')  # [
         self.consume('SYMBOL')  # ]
-        self.consume('IDENTIFIER')  # args
+        parameter = self.consume('IDENTIFIER').value  # args
         self.consume('SYMBOL')  # )
         self.consume('SYMBOL')  # {
         # Parse method body
         statements = []
-        while not self.match('SYMBOL'):
+        while self.tokens[self.current_token_index].value != '}':
             statements.append(self.statement())
         self.consume('SYMBOL')  # }
-        return {'name': method_name, 'access': access, 'return_type': 'void', 'parameters': [], 'statements': statements}
+        return {'name': method_name, 'return_type': 'void', 'parameters': [parameter], 'statements': statements}
 
     def method_declaration(self):
-        access = self.consume('KEYWORD').value  # public
+        self.consume('KEYWORD').value  # public
         return_type = self.consume('KEYWORD').value  # Type
         method_name = self.consume('IDENTIFIER').value
         start_param = self.consume('SYMBOL').value  # (
@@ -97,17 +99,7 @@ class MiniJavaParser:
         while not self.match('SYMBOL'):
             statements.append(self.statement())
         self.consume('SYMBOL')  # }
-        return {'name': method_name, 'access': access, 'return_type': return_type, 'parameters': parameters, 'statements': statements}
-
-    def field_declaration(self):
-        field_type = self.consume('IDENTIFIER').value  # Type
-        field_name = self.consume('IDENTIFIER').value
-        if self.match('SYMBOL'):  # Check for initialization
-            self.consume('SYMBOL')  # =
-            # Parse initialization expression
-            expression = self.expression()
-        self.consume('SYMBOL')  # ;
-        return {'type': field_type, 'name': field_name, 'expression': expression}
+        return {'name': method_name, 'return_type': return_type, 'parameters': parameters, 'statements': statements}
 
     def statement(self):
         if self.match('KEYWORD'):  # VariableDeclaration or Assignment or PrintStatement or IfStatement or WhileStatement or ReturnStatement
@@ -122,13 +114,16 @@ class MiniJavaParser:
                 return self.while_statement()
             elif keyword == 'return':
                 return self.return_statement()
-        elif self.match('SYMBOL'):  # Block
+        elif self.match('IDENTIFIER'):
+            return self.assignment()
+        elif self.match('SYMBOL'):
             return self.block()
 
     def variable_declaration(self):
         var_type = self.consume('KEYWORD').value  # Type
         var_name = self.consume('IDENTIFIER').value
-        if self.match('SYMBOL'):  # Check for initialization
+        expression = None
+        if self.tokens[self.current_token_index].value == '=':  # Check for initialization
             self.consume('SYMBOL')  # =
             # Parse initialization expression
             expression = self.expression()
@@ -158,14 +153,14 @@ class MiniJavaParser:
         # Parse condition expression
         condition = self.expression()
         self.consume('SYMBOL')  # )
+
         # Parse if statement body
         if_body = self.statement()
+        else_body = None
         if self.match('KEYWORD') and self.tokens[self.current_token_index].value == 'else':
             self.consume('KEYWORD')  # else
             # Parse else statement body
             else_body = self.statement()
-        else:
-            else_body = None
         return {'condition': condition, 'if_body': if_body, 'else_body': else_body}
 
     def while_statement(self):
@@ -176,7 +171,7 @@ class MiniJavaParser:
         self.consume('SYMBOL')  # )
         # Parse while loop body
         body = self.statement()
-        return {'condition': condition, 'body': body}
+        return {'while-condition': condition, 'body': body}
 
     def return_statement(self):
         self.consume('KEYWORD')  # return
@@ -222,35 +217,37 @@ class MiniJavaParser:
             return expression
         elif self.match('IDENTIFIER'):
             identifier = self.consume('IDENTIFIER').value
-            if self.match('SYMBOL') and self.tokens[self.current_token_index].value == '(':
-                # Parse method invocation
-                return self.method_invocation(identifier)
-            else:
-                return identifier
+            return identifier
         elif self.match('INTEGER_LITERAL'):
             return int(self.consume('INTEGER_LITERAL').value)
-
-    def method_invocation(self, method_name):
-        self.consume('SYMBOL')  # (
-        # Parse method arguments
-        arguments = []
-        while not self.match('SYMBOL'):
-            arguments.append(self.expression())
-            if self.match('SYMBOL') and self.tokens[self.current_token_index].value == ',':
-                self.consume('SYMBOL')  # ,
-        self.consume('SYMBOL')  # )
-        return {'method_name': method_name, 'arguments': arguments}
 
 # Test the parser
 code = '''
 class Print {
-    public static void main(String[] a){
-        System.out.println(3 + 3);
+    public static void main(String[] args) {
+        int x;
+        x = 5;
+        System.out.println(x);
+        if (5) {
+            System.out.println(1);
+        } else {
+            System.out.println(0);
+        }
+        int i;
+        i = 0;
+        while (5) {
+            System.out.println(i);
+            i = i + 1;
+        }
+        return 0;
     }
 }
 '''
 lexer = Lexer(code)
 print(lexer.tokens)
 parser = MiniJavaParser(lexer.tokens)
-parse_tree = parser.parse()
-print(parse_tree)
+try:
+    parse_tree = parser.parse()
+    print(parse_tree)
+except SyntaxError as e:
+    print(f"Syntax error: {e} at line {code.count('\n', 0, parser.current_token_index) + 1}")

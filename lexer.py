@@ -14,7 +14,6 @@ TOKEN_TYPES = {
 TOKEN_REGEX = '|'.join(f'(?P<{token_type}>{pattern})' for token_type, pattern in TOKEN_TYPES.items())
 TOKEN_REGEX = re.compile(TOKEN_REGEX)
 
-# Token class
 class Token:
     def __init__(self, type, value):
         self.type = type
@@ -23,7 +22,6 @@ class Token:
     def __repr__(self):
         return f'Token({self.type}, {self.value})'
 
-# Lexer class
 class Lexer:
     def __init__(self, code):
         self.code = code

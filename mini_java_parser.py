@@ -1,5 +1,3 @@
-from lexer import Lexer
-
 class MiniJavaParser:
     def __init__(self, tokens):
         self.tokens = tokens
@@ -128,7 +126,7 @@ class MiniJavaParser:
             # Parse initialization expression
             expression = self.expression()
         self.consume('SYMBOL')  # ;
-        return {'type': var_type, 'name': var_name, 'expression': expression}
+        return {'type': 'VariableDeclaration', 'var_type': var_type, 'name': var_name, 'expression': expression}
 
     def assignment(self):
         var_name = self.consume('IDENTIFIER').value
@@ -136,7 +134,7 @@ class MiniJavaParser:
         # Parse assignment expression
         expression = self.expression()
         self.consume('SYMBOL')  # ;
-        return {'var_name': var_name, 'expression': expression}
+        return {'type': 'Assignment', 'var_name': var_name, 'expression': expression}
 
     def print_statement(self):
         self.consume('KEYWORD')  # System.out.println
@@ -145,7 +143,7 @@ class MiniJavaParser:
         expression = self.expression()
         self.consume('SYMBOL')  # )
         self.consume('SYMBOL')  # ;
-        return {'I/O request': 'print', 'expression': expression}
+        return {'type': 'PrintStatement', 'expression': expression}
 
     def if_statement(self):
         self.consume('KEYWORD')  # if
@@ -161,7 +159,7 @@ class MiniJavaParser:
             self.consume('KEYWORD')  # else
             # Parse else statement body
             else_body = self.statement()
-        return {'condition': condition, 'if_body': if_body, 'else_body': else_body}
+        return {'type': 'IfStatement','condition': condition, 'if_body': if_body, 'else_body': else_body}
 
     def while_statement(self):
         self.consume('KEYWORD')  # while
@@ -171,14 +169,14 @@ class MiniJavaParser:
         self.consume('SYMBOL')  # )
         # Parse while loop body
         body = self.statement()
-        return {'while-condition': condition, 'body': body}
+        return {'type': 'WhileStatement','while-condition': condition, 'body': body}
 
     def return_statement(self):
         self.consume('KEYWORD')  # return
         # Parse return expression
         expression = self.expression()
         self.consume('SYMBOL')  # ;
-        return {'statement': 'return', 'expression': expression}
+        return {'type': 'ReturnStatement', 'expression': expression}
 
     def block(self):
         self.consume('SYMBOL')  # {
@@ -220,34 +218,3 @@ class MiniJavaParser:
             return identifier
         elif self.match('INTEGER_LITERAL'):
             return int(self.consume('INTEGER_LITERAL').value)
-
-# Test the parser
-code = '''
-class Print {
-    public static void main(String[] args) {
-        int x;
-        x = 5;
-        System.out.println(x);
-        if (5) {
-            System.out.println(1);
-        } else {
-            System.out.println(0);
-        }
-        int i;
-        i = 0;
-        while (5) {
-            System.out.println(i);
-            i = i + 1;
-        }
-        return 0;
-    }
-}
-'''
-lexer = Lexer(code)
-print(lexer.tokens)
-parser = MiniJavaParser(lexer.tokens)
-try:
-    parse_tree = parser.parse()
-    print(parse_tree)
-except SyntaxError as e:
-    print(f"Syntax error: {e} at line {code.count('\n', 0, parser.current_token_index) + 1}")

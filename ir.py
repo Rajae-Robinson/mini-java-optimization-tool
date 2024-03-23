@@ -1,7 +1,6 @@
 # Three Address Code Generator
 import re
 
-
 class TACGenerator:
     def __init__(self, parse_tree):
         self.parse_tree = parse_tree
@@ -83,7 +82,7 @@ class TACGenerator:
         
     def optimize_tac(self):
         self.constant_folding()
-        # self.dead_code_elimination()
+        self.dead_code_elimination()
         self.common_subexpression_elimination()
         self.loop_unrolling()
 
@@ -98,16 +97,28 @@ class TACGenerator:
 
     def dead_code_elimination(self):
         used_variables = set()
+    
+        # First pass: identify variables that are used
         for instruction in self.instructions:
             parts = instruction.split(' = ')
             if len(parts) == 2:
-                used_variables.add(parts[0])
-            elif parts[0].startswith("print "):
-                # Extract variable name from print statement
-                used_variables.add(parts[0].split(" ")[1])
-
-        # TODO: Fix
-        self.instructions = [instruction for instruction in self.instructions if instruction.split(' ')[0] in used_variables]
+                expr = parts[1].strip()
+                assigned_variable = parts[0].strip()
+                if expr != "None":
+                    used_variables.add(assigned_variable)
+        
+        # Second pass: remove instructions for unused variables
+        new_instructions = []
+        for instruction in self.instructions:
+            parts = instruction.split(' = ')
+            if len(parts) == 2:
+                assigned_variable = parts[0].strip()
+                if assigned_variable in used_variables:
+                    new_instructions.append(instruction)
+            else:
+                new_instructions.append(instruction)
+        
+        self.instructions = new_instructions
 
     def common_subexpression_elimination(self):
         expressions = {}

@@ -3,14 +3,14 @@ class WhileIFExample {
         int x;
         x = 5;
         System.out.println(x);
-        if (5) {
+        if (1) {
             System.out.println(1);
         } else {
             System.out.println(0);
         }
         int i;
         i = 0;
-        while (5) {
+        while (i < 5) {
             System.out.println(i);
             i = i + 1;
         }

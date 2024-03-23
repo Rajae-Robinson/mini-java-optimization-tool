@@ -1,4 +1,7 @@
 # Three Address Code Generator
+import re
+
+
 class TACGenerator:
     def __init__(self, parse_tree):
         self.parse_tree = parse_tree
@@ -77,3 +80,57 @@ class TACGenerator:
             temp_var = self.generate_temp_var()
             self.instructions.append(f'{temp_var} = {left} {expression["operator"]} {right}') # type: ignore
             return temp_var
+        
+    def optimize_tac(self):
+        self.constant_folding()
+        # self.dead_code_elimination()
+        self.common_subexpression_elimination()
+        self.loop_unrolling()
+
+    def constant_folding(self):
+        def has_no_letters(text):
+            return not re.search('[a-zA-Z]', text)
+        
+        for i, instruction in enumerate(self.instructions):
+            parts = instruction.split(' = ')
+            if len(parts) == 2 and has_no_letters(parts[1]):
+                self.instructions[i] = f"{parts[0]} = {eval(parts[1])}"
+
+    def dead_code_elimination(self):
+        used_variables = set()
+        for instruction in self.instructions:
+            parts = instruction.split(' = ')
+            if len(parts) == 2:
+                used_variables.add(parts[0])
+            elif parts[0].startswith("print "):
+                # Extract variable name from print statement
+                used_variables.add(parts[0].split(" ")[1])
+
+        # TODO: Fix
+        self.instructions = [instruction for instruction in self.instructions if instruction.split(' ')[0] in used_variables]
+
+    def common_subexpression_elimination(self):
+        expressions = {}
+        for i, instruction in enumerate(self.instructions):
+            parts = instruction.split(' = ')
+            if len(parts) == 2:
+                expr = parts[1]
+                if expr in expressions:
+                    self.instructions[i] = f"{parts[0]} = {expressions[expr]}"
+                else:
+                    expressions[expr] = parts[0]
+    
+    def loop_unrolling(self, max_unroll=2):
+        for i in range(len(self.instructions)):
+            instruction = self.instructions[i]
+            if instruction.startswith('goto L') and i > 0:
+                label = instruction.split()[1]
+                loop_start_index = None
+                for j in range(i - 1, -1, -1):
+                    if self.instructions[j].startswith(label + ':'):
+                        loop_start_index = j
+                        break
+                if loop_start_index is not None:
+                    loop_body = self.instructions[loop_start_index + 1:i]
+                    for k in range(max_unroll - 1):
+                        self.instructions[loop_start_index + 1:loop_start_index + 1] = loop_body

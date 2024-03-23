@@ -188,7 +188,15 @@ class MiniJavaParser:
         return {'statements': statements}
 
     def expression(self):
-        return self.additive_expression()
+        return self.relational_expression()
+    
+    def relational_expression(self):
+        expr = self.additive_expression()
+        while self.match('RELATIONAL_OPERATOR'):
+            operator = self.consume('RELATIONAL_OPERATOR').value
+            right_expr = self.additive_expression()
+            expr = {'left': expr, 'operator': operator, 'right': right_expr}
+        return expr
 
     def additive_expression(self):
         expr = self.multiplicative_expression()

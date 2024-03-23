@@ -6,6 +6,7 @@ TOKEN_TYPES = {
     'IDENTIFIER': r'[a-zA-Z_][a-zA-Z0-9_]*',
     'INTEGER_LITERAL': r'\d+',
     'SYMBOL': r'[{}()\[\];=+\-*/,.]',
+    'RELATIONAL_OPERATOR': r'[<>!=]=?|&&|\|\|',
     'COMMENT': r'\/\/.*|\/\*(.|\n)*?\*\/',
     'WHITESPACE': r'\s+'
 }

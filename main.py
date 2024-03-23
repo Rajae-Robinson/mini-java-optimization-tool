@@ -1,29 +1,16 @@
+import sys
 from ir import TACGenerator
 from lexer import Lexer
 from mini_java_parser import MiniJavaParser
 
-def main():
-    code = '''
-    class WhileIfExample {
-        public static void main(String[] args) {
-            int x;
-            x = 5;
-            System.out.println(x);
-            if (5) {
-                System.out.println(1);
-            } else {
-                System.out.println(0);
-            }
-            int i;
-            i = 0;
-            while (5) {
-                System.out.println(i);
-                i = i + 1;
-            }
-            return 0;
-        }
-    }
-    '''
+def main(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            code = file.read()
+    except FileNotFoundError:
+        print(f"File '{file_path}' not found.")
+        return
+
     lexer = Lexer(code)
     print("LEXICAL ANALYSIS\n")
     print("Tokens\n")
@@ -37,9 +24,9 @@ def main():
         print("Parse tree output")
         print(f"{parse_tree}\n\n")
     except SyntaxError as e:
-        print(f"Syntax error: {e} at line {code.count('\n', 0, parser.current_token_index) + 1}")
+        print("Syntax error: " + str(e) + " at line " + str(code.count('\n', 0, parser.current_token_index) + 1))
 
-    if(parse_tree):
+    if parse_tree:
         tac_generator = TACGenerator(parse_tree)
         tac_generator.generate_tac()
         print("INTERMEDIATE CODE GENERATION\n")
@@ -48,4 +35,5 @@ def main():
             print(instruction)
 
 if __name__ == "__main__":
-    main()
+    file_path = sys.argv[1] if len(sys.argv) > 1 else "input.java"
+    main(file_path)

@@ -1,3 +1,13 @@
+"""
+Group members: 
+Dekardiago Nelson (2106568) 
+Javaughni Bell (1300066) 
+Rajae Robinson (2006677)
+Yokiri Yorke (1800020)
+
+Tutor: Ms. Burrell-Battick
+"""
+
 import sys
 from ir import TACGenerator
 from lexer import Lexer
